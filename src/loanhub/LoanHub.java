@@ -34,6 +34,11 @@ public class LoanHub {
            an.mApplication();
            break;
            
+           case 3:
+               Report rt = new Report();
+               rt.viewreport();
+               break;
+               
             case 4:
                  System.out.println("Exit selected...type yes to continue: ");
                 String resp = sc.next();
