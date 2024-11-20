@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class config {
 
@@ -12,8 +14,7 @@ public class config {
         Connection con = null;
         try {
             Class.forName("org.sqlite.JDBC"); // Load the SQLite JDBC driver
-            con = DriverManager.getConnection("jdbc:sqlite:loan.db"); // Establish connection
-            System.out.println("Connection Successful");
+            con = DriverManager.getConnection("jdbc:sqlite:loan.db"); // Establish connection          
         } catch (Exception e) {
             System.out.println("Connection Failed: " + e);
         }
@@ -21,12 +22,10 @@ public class config {
     }
 
     public void addRecord(String sql, Object... values) {
-        try (Connection conn = this.connectDB(); // Use the connectDB method
+        try (Connection conn = this.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            // Loop through the values and set them in the prepared statement dynamically
             setPreparedStatementValues(pstmt, values);
-
             pstmt.executeUpdate();
             System.out.println("Record added successfully!");
         } catch (SQLException e) {
@@ -34,53 +33,84 @@ public class config {
         }
     }
 
-    public void viewRecords(String sqlQuery, String[] columnHeaders, String[] columnNames) {
-        // Check that columnHeaders and columnNames arrays are the same length
-        if (columnHeaders.length != columnNames.length) {
-            System.out.println("Error: Mismatch between column headers and column names.");
-            return;
-        }
+    
 
-        try (Connection conn = this.connectDB();
-             PreparedStatement pstmt = conn.prepareStatement(sqlQuery);
-             ResultSet rs = pstmt.executeQuery()) {
+    
+    
 
-            // Print the headers dynamically
-            StringBuilder headerLine = new StringBuilder();
-            headerLine.append("------------------------------------------------------------------------------------------------------------------------"
-                    + "------------------------------------------------------------------------------------------------------------------\n| ");
-            for (String header : columnHeaders) {
-                headerLine.append(String.format("%-25s | ", header)); // Adjust formatting as needed
-            }
-            headerLine.append("\n-----------------------------------------------------------------------------------------------------------------------"
-                    + "------------------------------------------------------------------------------------------------------------------");
-
-            System.out.println(headerLine.toString());
-
-            // Print the rows dynamically based on the provided column names
-            while (rs.next()) {
-                StringBuilder row = new StringBuilder("| ");
-                for (String colName : columnNames) {
-                    String value = rs.getString(colName);
-                    row.append(String.format("%-25s | ", value != null ? value : "")); // Adjust formatting
-                }
-                System.out.println(row.toString());
-            }
-            System.out.println("----------------------------------------------------------------------------------------------------------------------------"
-                    + "------------------------------------------------------------------------------------------------------------");
-
-        } catch (SQLException e) {
-            System.out.println("Error retrieving records: " + e.getMessage());
-        }
+public void viewRecords(String sqlQuery, String[] columnHeaders, String[] columnNames, Object... params) {
+    if (columnHeaders.length != columnNames.length) {
+        System.out.println("Error: Mismatch between column headers and column names.");
+        return;
     }
 
+    try (Connection conn = this.connectDB();
+         PreparedStatement pstmt = conn.prepareStatement(sqlQuery)) {
+
+        setPreparedStatementValues(pstmt, params);
+        ResultSet rs = pstmt.executeQuery();
+
+        // Collect data and calculate max length for each column
+        List<Object[]> records = new ArrayList<>();
+        int[] columnWidths = new int[columnHeaders.length];
+        for (int i = 0; i < columnHeaders.length; i++) {
+            columnWidths[i] = columnHeaders[i].length();
+        }
+
+        while (rs.next()) {
+            Object[] row = new Object[columnNames.length];
+            for (int i = 0; i < columnNames.length; i++) {
+                row[i] = rs.getString(columnNames[i]);
+                if (row[i] != null && row[i].toString().length() > columnWidths[i]) {
+                    columnWidths[i] = row[i].toString().length();
+                }
+            }
+            records.add(row);
+        }
+
+        // Generate the horizontal line dynamically
+        StringBuilder horizontalLine = new StringBuilder();
+        for (int width : columnWidths) {
+            horizontalLine.append("+");
+            for (int i = 0; i < width + 2; i++) { // Adding padding
+                horizontalLine.append("-");
+            }
+        }
+        horizontalLine.append("+");
+        String line = horizontalLine.toString();
+
+        // Print header
+        System.out.println(line);
+        for (int i = 0; i < columnHeaders.length; i++) {
+            System.out.printf("| %-" + columnWidths[i] + "s ", columnHeaders[i]);
+        }
+        System.out.println("|");
+        System.out.println(line);
+
+        // Print rows
+        for (Object[] row : records) {
+            for (int i = 0; i < columnNames.length; i++) {
+                System.out.printf("| %-" + columnWidths[i] + "s ", row[i] != null ? row[i] : "");
+            }
+            System.out.println("|");
+        }
+        System.out.println(line);
+
+    } catch (SQLException e) {
+        System.out.println("Error retrieving records: " + e.getMessage());
+    }
+}
+
+
+    
+    
+    
+
     public void updateRecord(String sql, Object... values) {
-        try (Connection conn = this.connectDB(); // Use the connectDB method
+        try (Connection conn = this.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            // Loop through the values and set them in the prepared statement dynamically
             setPreparedStatementValues(pstmt, values);
-
             pstmt.executeUpdate();
             System.out.println("Record updated successfully!");
         } catch (SQLException e) {
@@ -92,9 +122,7 @@ public class config {
         try (Connection conn = this.connectDB();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            // Loop through the values and set them in the prepared statement dynamically
             setPreparedStatementValues(pstmt, values);
-
             pstmt.executeUpdate();
             System.out.println("Record deleted successfully!");
         } catch (SQLException e) {
@@ -129,23 +157,20 @@ public class config {
     //-----------------------------------------------
     // GET SINGLE VALUE METHOD
     //-----------------------------------------------
-
-    public double getSingleValue(String sql, Object... params) {
-        double result = 0.0;
-        try (Connection conn = connectDB();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setPreparedStatementValues(pstmt, params);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                result = rs.getDouble(1);
-            }
-
-        } catch (SQLException e) {
-            System.out.println("Error retrieving single value: " + e.getMessage());
+    public String getSingleValue(String sql, Object... params) {
+    String result = null;
+    try (Connection conn = connectDB(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        setPreparedStatementValues(pstmt, params);
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next()) {
+            result = rs.getString(1);
         }
-        return result;
+    } catch (SQLException e) {
+        System.out.println("Error retrieving single value: " + e.getMessage());
     }
+    return result;
+}
+
 
     //-----------------------------------------------
     // GET SINGLE RECORD METHOD
@@ -169,5 +194,24 @@ public class config {
             System.out.println("Error retrieving single record: " + e.getMessage());
         }
         return result;
+    }
+
+    
+    // Get the count of records
+    public int getCount(String sql, Object... params) {
+        int count = 0;
+        try (Connection conn = connectDB();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            setPreparedStatementValues(pstmt, params);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error retrieving count: " + e.getMessage());
+        }
+        return count;
     }
 }
