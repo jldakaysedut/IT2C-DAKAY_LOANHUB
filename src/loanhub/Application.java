@@ -213,14 +213,14 @@ public class Application{
         }
     }
 
-    // Check if the application is already approved
+
     String currentStatus = conf.getSingleValue("SELECT apn_status FROM tbl_application WHERE apn_id = ?", id);
     if ("Approved".equalsIgnoreCase(currentStatus)){
         System.out.println("Application is already approved and cannot be changed.");
-        return; // Exit the method
+        return; 
     }else if(currentStatus == null){
         System.out.println("Error: Status not found.");
-        return; // Exit the method if status is null
+        return;
     }
 
     String newStatus = "";

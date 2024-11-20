@@ -332,7 +332,7 @@ public void viewApplicant(){
     
     System.out.println("->---------->->---------->->---------->");
 
-    // Ask for confirmation before deleting
+    
     System.out.print(" This will permanently delete the applicant and all associated applications.\n Are you sure you want to proceed? (yes/no): ");
     String confirmation = sc.nextLine().trim().toLowerCase();
     if (!confirmation.equals("yes")) {
@@ -343,14 +343,14 @@ public void viewApplicant(){
     try (Connection conn = conf.connectDB()) {
         conn.setAutoCommit(false);
 
-        // Delete all applications of the applicant
+        
         String deleteApplicationsSql = "DELETE FROM tbl_application WHERE apt_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(deleteApplicationsSql)) {
             pstmt.setInt(1, id);
             pstmt.executeUpdate();
         }
 
-        // Delete the applicant
+        
         String deleteApplicantSql = "DELETE FROM tbl_applicant WHERE apt_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(deleteApplicantSql)) {
             pstmt.setInt(1, id);
@@ -361,7 +361,7 @@ public void viewApplicant(){
         System.out.println("\nApplicant and all associated applications deleted successfully.");
     } catch (SQLException e) {
         System.out.println("Error during deletion: " + e.getMessage());
-        // Rollback if something goes wrong
+      
         try (Connection conn = conf.connectDB()) {
             conn.rollback();
         } catch (SQLException rollbackEx) {
