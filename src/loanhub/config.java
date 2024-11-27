@@ -214,4 +214,29 @@ public void viewRecords(String sqlQuery, String[] columnHeaders, String[] column
         }
         return count;
     }
+    
+    
+    
+    public double getTotal(String sql, Object... params) {
+    double total = 0;
+    try (Connection conn = connectDB();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        setPreparedStatementValues(pstmt, params);
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next()) {
+            total = rs.getDouble(1);
+        }
+    } catch (SQLException e) {
+        System.out.println("Error retrieving total: " + e.getMessage());
+    }
+    return total;
+}
+
+    
+    
+    
+    
+    
+    
+    
 }

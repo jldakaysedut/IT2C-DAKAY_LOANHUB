@@ -190,7 +190,7 @@ public class Applicant{
 public void viewApplicant(){
         System.out.print("\nApplicant Details: \n");
         String aqry = "SELECT * FROM tbl_applicant";
-        String[] hrds = {"ID", "FULL Name", "DATE OF BIRTH", "AGE", "GENDER", "CONTACT NUMBER", "ADDRESS", "EMAIL", "STATUS", "MONTHLY INCOME"};
+        String[] hrds = {"ID", "FULL Name", "DATE OF BIRTH", "AGE", "GENDER", "CONTACT NUMBER", "ADDRESS", "EMAIL", "STATUS", "ANNUAL INCOME"};
         String[] clmns = {"apt_id", "apt_name", "apt_birth", "apt_age", "apt_gender", "apt_contact", "apt_address", "apt_email", "apt_status", "apt_annualincome"};
         config conf = new config();
         conf.viewRecords(aqry, hrds, clmns);
